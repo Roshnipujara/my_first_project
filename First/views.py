@@ -73,8 +73,6 @@ def add_rating(request):
         return render(request, "add_rating.html")
 
 
-def header(request):
-    return render(request, "header.html")
 
 
 def index(request):
