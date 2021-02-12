@@ -181,9 +181,10 @@ def gallery_insert(request):
         form=GalleryForm(request.POST,request.FILES)
         print("+++++++++++++",form.errors)
         if form.is_valid():
-            handle_uploaded_file(request.FILES['g_path'])
+            for x in request.FILES.getlist('g_path'):
+                handle_uploaded_file(x)
             form.save()
-            return redirect('/login')
+            return render(request, "login.html",{})
         else:
             form=GalleryForm()
             return render(request, "gallery_insert.html",{'form':form})
