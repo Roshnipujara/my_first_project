@@ -1,4 +1,3 @@
-
 $(document).ready(function() {
     $(".rating a").click(function() {
 

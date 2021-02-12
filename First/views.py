@@ -1,18 +1,18 @@
 import sys
 
 from django.contrib import messages
-from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render, redirect ,get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 
 from knock_knock import settings
-from .forms import RatingForm
-from .models import Login,Rating
+from .forms import RatingForm,GalleryForm
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
-from .models import Doctor,Rating,Login
+from .models import Doctor,Rating,Login,gallery,Images,Post
 from datetime import date
-
+from First.function import handle_uploaded_file
+from django.forms import modelformset_factory
 from django.core.mail import send_mail
 import random
 
@@ -68,7 +68,7 @@ def add_rating(request):
             else:
                 s = Rating(rating=val, d_id_id=did, date=d, l_id_id=v)
                 s.save()
-            return render(request, "add_rating.html", {'val': val})
+            return render(request, "add_rating.ht ml", {'val': val})
     else:
         return render(request, "add_rating.html")
 
@@ -106,8 +106,9 @@ def loginpage(request):
                 request.session['admin_password']=item.l_password
 
             if request.POST.get("remember"):
-                response = HttpResponse
-                response.set_cookie('cemail', request.POST["email"])
+                response = redirect("/rate/")
+                cookie_max_age = settings.TWO_FACTOR_REMEMBER_USER_SECONDS
+                response.set_cookie('cemail', request.POST["email"],max_age=cookie_max_age)
                 response.set_cookie('cpass', request.POST["password"])
                 return response
             return redirect("/rate/")
@@ -140,10 +141,59 @@ def send_OTP(request):
     obj=Login.objects.filter(l_email = e)
 
     if obj:
+        data = Login.objects.filter(l_email=e)
+        for item in data:
+            request.session['admin_id'] = item.l_id
+            request.session['admin_email'] = item.l_email
         val = Login.objects.filter(l_email=e).update(otp=otp1 , otp_used=0)
         subject='OTP verification'
         message =str(otp1)
         email_from=settings.EMAIL_HOST_USER
         recipient_list = [e, ]
         send_mail(subject, message, email_from ,recipient_list)
-        return render(request,'home.html')
+        return render(request,'reset.html')
+
+
+def reset_pass(request):
+    totp = request.POST['otp']
+    tpassword = request.POST['npass']
+    cpassword = request.POST['cpass']
+
+    if tpassword == cpassword :
+        e = request.session['admin_email']
+        val = Login.objects.filter(l_email=e,otp=totp,otp_used=0).count()
+
+        if val == 1:
+
+            val = Login.objects.filter(l_email=e).update(otp_used=1,l_password=tpassword)
+            return redirect('/login/')
+        else:
+            messages.error(request, 'OTP does not match')
+            return render(request, "reset.html")
+    else:
+        messages.error(request, 'New Password & Confirm Password does not match')
+        return render(request, "reset.html")
+
+    return render(request, "reset.html")
+
+def gallery_insert(request):
+    if request.method=="POST":
+        form=GalleryForm(request.POST,request.FILES)
+        print("+++++++++++++",form.errors)
+        if form.is_valid():
+            handle_uploaded_file(request.FILES['g_path'])
+            form.save()
+            return redirect('/login')
+        else:
+            form=GalleryForm()
+            return render(request, "gallery_insert.html",{'form':form})
+    return render(request, "gallery_insert.html")
+
+def blog_view(request):
+    posts=Post.object.all()
+    return render(request,"",{'posts':posts})
+
+def detail_view(request,id):
+    posts=get_object_or_404(Post,id=id)
+    photos=Images.objects.filter(post=posts)
+    return render(request,"details.html",{"photos":photos,"posts":posts})

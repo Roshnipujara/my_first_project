@@ -22,6 +22,7 @@ urlpatterns = [
     # LOGIN
     path('login/',views.loginpage),
     path('forgot/',views.forget_password),
+    path('reset/',views.reset_pass),
     path("logout/",views.logout_req),
     path("sendmail/",views.send_OTP),
 
@@ -34,6 +35,11 @@ urlpatterns = [
     path("add_rating/",views.add_rating,name="add_rating"),
     path('rate/',views.Rate,name="rate"),
     path('add_desc/',views.add_desc,name="add_desc"),
+
+    path("gallery_insert/",views.gallery_insert),
+    path("",views.blog_view,name='blog'),
+    path("<int:id>",views.detail_view,name='details'),
+
 
     path("home/",views.index),
     path('header/',views.header),
