@@ -35,7 +35,6 @@ urlpatterns = [
     path('rate/',views.Rate,name="rate"),
     path('add_desc/',views.add_desc,name="add_desc"),
 
-    path("home/",views.index),
-    path('header/',views.header),
+
 
 ]
